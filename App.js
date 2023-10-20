@@ -42,25 +42,22 @@ class App extends React.Component {
         console.log("render")
         console.log(this.state.attractions)
         let attractions = this.state.attractions
-        let keys = (attractions.length === 0 ? [] : Object.keys(attractions[0]))
+        let keys = (attractions.length === 0 ? [] : Object.keys(attractions[0]).filter(key => key !== "poiID"))
         //first render will provide empty array, only after didMount called the array gets filled with objects
         console.log(keys)
         return (
-            <div>
-                <table>
-                    <thead>
+            <div className="table-responsive">
+                <table className="table table-striped table-bordered table-hover">
+                    <thead className="thead-dark">
                         <tr>
-                            {keys.map(key => <th>{key}</th>)}
-                            <th>Name</th>
-                            <th>Address</th>
+                            {keys.map(key => <th scope="col">{key.toUpperCase()}</th>)}
                         </tr>
                     </thead>
 
                     <tbody>
                         {attractions.map((attraction) =>
-                            <tr key={attraction.poiID}>
-                                <td>{attraction.name}</td>
-                                <td>{attraction.address}</td>
+                            <tr scope="row" key={attraction.poiID}>
+                                {keys.map(key => <td>{attraction[key]}</td>)}
                             </tr>
                         )}
                     </tbody>
