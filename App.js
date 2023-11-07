@@ -50,6 +50,7 @@ class AttractionsApp extends React.Component {
         sortedAttractions.sort((a, b) => {
             if (sortColumn === "name" || sortColumn === "address") {
                 return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
+                // localeCompare is used to compare strings
             } else if (sortColumn === "lastUpdate") {
                 const dateA = new Date(a[sortColumn]);
                 const dateB = new Date(b[sortColumn]);
@@ -75,7 +76,7 @@ class AttractionsApp extends React.Component {
         } else {
             // Filter attractions based on the selected area
             const filteredAttractions = this.state.attractions.filter((attraction) => {
-                const areaRegex = new RegExp(`${filterValue}`, "i"); // Case-insensitive matching
+                const areaRegex = new RegExp(`${filterValue}`, "i");
                 return areaRegex.test(attraction.address);
             });
             this.setState({ filteredAttractions });
