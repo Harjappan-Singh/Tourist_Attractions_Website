@@ -5,7 +5,8 @@ class AttractionsApp extends React.Component {
             attractions: [],
             filteredAttractions: [],
             sortDirection: 1,
-            sortColumn: "name"
+            sortColumn: "name",
+            showAddModal: true
         };
     }
 
@@ -81,14 +82,28 @@ class AttractionsApp extends React.Component {
         }
     };
 
+    deleteAttraction = (poiID) => {
+        const updatedAttractions = this.state.attractions.filter(attraction => attraction.poiID !== poiID);
+        const updatedFilteredAttractions = this.state.filteredAttractions.filter(attraction => attraction.poiID !== poiID);
+        this.setState({ attractions: updatedAttractions, filteredAttractions: updatedFilteredAttractions });
+    }
+
+    handleAddAttraction = (attractionData) => {
+        const { attractions } = this.state;
+        const newAttractions = [...attractions, attractionData];
+        this.setState({ attractions: newAttractions, filteredAttractions: newAttractions });
+    };
+
     render() {
         return (
             <div>
+
                 <FilterAttractions attractions={this.state.attractions} filterAttractions={this.filterAttractions} />
                 <TouristAttractionTable attractions={this.state.attractions} filteredAttractions={this.state.filteredAttractions}
                     sortAttractions={this.sortAttractions}
                     sortColumn={this.state.sortColumn}
-                    sortDirection={this.state.sortDirection} />
+                    sortDirection={this.state.sortDirection}
+                    deleteAttraction={this.deleteAttraction} />
             </div>
         );
     }
@@ -109,6 +124,10 @@ class TouristAttractionTable extends React.Component {
         this.props.sortAttractions(sortColumn);
     };
 
+    handleDelete = (poiID) => {
+        this.props.deleteAttraction(poiID);
+    }
+
     render() {
         let attractions = this.props.filteredAttractions.length
             ? this.props.filteredAttractions
@@ -121,7 +140,6 @@ class TouristAttractionTable extends React.Component {
         return (
             <div className="container-fluid">
                 <h1 className="h3 mb-2 text-gray-800">Tourist Attractions</h1>
-                <p className="mb-4">Here is your data table:</p>
                 <div className="card shadow mb-4">
                     <div className="card-body">
                         <div className="table-responsive">
@@ -152,6 +170,14 @@ class TouristAttractionTable extends React.Component {
                                                         : attraction[key]}
                                                 </td>
                                             ))}
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-danger"
+                                                    onClick={() => this.handleDelete(attraction.poiID)}>
+                                                    Delete
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -170,8 +196,13 @@ class FilterAttractions extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            filterValue: 'All Areas'
+            filterValue: 'All Areas',
+            showModal: false
         };
+
+        this.handleFilterChange = this.handleFilterChange.bind(this);
+        this.handleShowModal = this.handleShowModal.bind(this);
+        this.handleCloseModal = this.handleCloseModal.bind(this);
     }
 
     handleFilterChange = (e) => {
@@ -179,6 +210,15 @@ class FilterAttractions extends React.Component {
         this.setState({ filterValue });
         this.props.filterAttractions(filterValue);
     };
+
+    handleShowModal = () => {
+        this.setState({ showModal: true });
+    };
+
+    handleCloseModal = () => {
+        this.setState({ showModal: false });
+    };
+
 
     render() {
         let areas = ['All Areas'];
@@ -206,6 +246,114 @@ class FilterAttractions extends React.Component {
                         </option>
                     ))}
                 </select>
+                <button onClick={this.handleShowModal}>Add Attraction</button>
+                {this.state.showModal && (
+                    <AddAttractionModal
+                        showModal={this.state.showModal}
+                        handleClose={this.handleCloseModal}
+                        handleAddAttraction={this.props.handleAddAttraction}
+                    />
+                )}
+
+            </div>
+        );
+    }
+}
+
+
+class AddAttractionModal extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            name: "",
+            address: "",
+            tags: "",
+            isFree: true,
+        };
+    }
+
+    handleInputChange = (event) => {
+        const target = event.target;
+        const value = target.type === "checkbox" ? target.checked : target.value;
+        const name = target.name;
+
+        this.setState({
+            [name]: value,
+        });
+    };
+
+    handleAddAttraction = () => {
+        const { name, address, tags, isFree } = this.state;
+        const newAttraction = {
+            name: name,
+            address: address,
+            tags: tags.split(",").map((tag) => tag.trim()),
+            isFree: isFree,
+        };
+
+        this.props.handleAddAttraction(newAttraction);
+        this.props.handleClose();
+    };
+
+    render() {
+        if (!this.props.showModal) {
+            return null;
+        }
+
+        return (
+            <div className="modal" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="exampleModalLabel">Add Attraction</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={this.props.handleClose}></button>
+                        </div>
+                        <div className="modal-body">
+                            <form>
+                                <label>
+                                    Name:
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={this.state.name}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Address:
+                                    <input
+                                        type="text"
+                                        name="address"
+                                        value={this.state.address}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Tags:
+                                    <input
+                                        type="text"
+                                        name="tags"
+                                        value={this.state.tags}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Free:
+                                    <input
+                                        type="checkbox"
+                                        name="isFree"
+                                        checked={this.state.isFree}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                            </form>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={this.props.handleClose}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={this.handleAddAttraction}>Add</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
