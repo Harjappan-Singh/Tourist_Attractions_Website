@@ -42,32 +42,59 @@ class AttractionsApp extends React.Component {
             });
     }
 
-    sortAttractions = (sortColumn, sortDirection) => {
+    // sortAttractions = (sortColumn) => {
+    //     let sortedAttractions = [...this.state.filteredAttractions];
+    //     let sortDirection = this.state.sortDirection === 1 ? -1 : 1;
 
-        // console.log("Sorting attractions with column:", sortColumn, "and direction:", sortDirection);
+    //     sortedAttractions.sort((a, b) => {
+    //         if (sortColumn === "name" || sortColumn === "address") {
+    //             return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
+    //         } else if (sortColumn === "lastUpdate") {
+    //             const dateA = new Date(a[sortColumn]);
+    //             const dateB = new Date(b[sortColumn]);
+    //             return (dateA - dateB) * sortDirection;
+    //         } else if (sortColumn === "tags") {
+    //             const tagsA = a[sortColumn].join(", ");
+    //             const tagsB = b[sortColumn].join(", ");
+    //             return tagsA.localeCompare(tagsB) * sortDirection;
+    //         } else if (sortColumn === "free") {
+    //             return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
+    //         } else {
+    //             return (a[sortColumn] - b[sortColumn]) * sortDirection;
+    //         }
+    //     });
+
+    //     this.setState({ filteredAttractions: sortedAttractions, sortColumn, sortDirection: sortDirection });
+    // };
+
+    sortAttractions = (sortColumn) => {
         let sortedAttractions = [...this.state.filteredAttractions];
+        let sortDirection = this.state.sortDirection === 1 ? -1 : 1;
 
         sortedAttractions.sort((a, b) => {
             if (sortColumn === "name" || sortColumn === "address") {
                 return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
-                // localeCompare is used to compare strings
-            } else if (sortColumn === "lastUpdate") {
-                const dateA = new Date(a[sortColumn]);
-                const dateB = new Date(b[sortColumn]);
-                return (dateA - dateB) * sortDirection;
             } else if (sortColumn === "tags") {
                 const tagsA = a[sortColumn].join(", ");
                 const tagsB = b[sortColumn].join(", ");
                 return tagsA.localeCompare(tagsB) * sortDirection;
             } else if (sortColumn === "free") {
                 return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
-            } else {
+            } else if (sortColumn === "rating") {
                 return (a[sortColumn] - b[sortColumn]) * sortDirection;
+            } else if (sortColumn === "lastUpdate") {
+                const dateA = new Date(a[sortColumn]);
+                const dateB = new Date(b[sortColumn]);
+                return (dateA - dateB) * sortDirection;
+            } else {
+                return 0;
             }
         });
-        // console.log("Sorted attractions:", sortedAttractions);
-        this.setState({ filteredAttractions: sortedAttractions, sortColumn, sortDirection });
+
+        this.setState({ filteredAttractions: sortedAttractions, sortColumn, sortDirection: sortDirection });
     };
+
+
 
     filterAttractions = (filterValue) => {
         if (filterValue === "All Areas") {
@@ -214,6 +241,7 @@ class FilterAttractions extends React.Component {
 
     handleShowModal = () => {
         this.setState({ showModal: true });
+        console.log('button was clicked')
     };
 
     handleCloseModal = () => {
@@ -273,8 +301,8 @@ class AddAttractionModal extends React.Component {
         };
     }
 
-    handleInputChange = (event) => {
-        const target = event.target;
+    handleInputChange = (e) => {
+        const target = e.target;
         const value = target.type === "checkbox" ? target.checked : target.value;
         const name = target.name;
 
