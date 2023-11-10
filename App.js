@@ -6,7 +6,7 @@ class AttractionsApp extends React.Component {
             filteredAttractions: [],
             sortDirection: 1,
             sortColumn: "name",
-            showAddModal: true
+            showAddModal: false // Set showAddModal to false initially
         };
     }
 
@@ -41,31 +41,6 @@ class AttractionsApp extends React.Component {
                 console.error("Error while fetching the data", error);
             });
     }
-
-    // sortAttractions = (sortColumn) => {
-    //     let sortedAttractions = [...this.state.filteredAttractions];
-    //     let sortDirection = this.state.sortDirection === 1 ? -1 : 1;
-
-    //     sortedAttractions.sort((a, b) => {
-    //         if (sortColumn === "name" || sortColumn === "address") {
-    //             return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
-    //         } else if (sortColumn === "lastUpdate") {
-    //             const dateA = new Date(a[sortColumn]);
-    //             const dateB = new Date(b[sortColumn]);
-    //             return (dateA - dateB) * sortDirection;
-    //         } else if (sortColumn === "tags") {
-    //             const tagsA = a[sortColumn].join(", ");
-    //             const tagsB = b[sortColumn].join(", ");
-    //             return tagsA.localeCompare(tagsB) * sortDirection;
-    //         } else if (sortColumn === "free") {
-    //             return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
-    //         } else {
-    //             return (a[sortColumn] - b[sortColumn]) * sortDirection;
-    //         }
-    //     });
-
-    //     this.setState({ filteredAttractions: sortedAttractions, sortColumn, sortDirection: sortDirection });
-    // };
 
     sortAttractions = (sortColumn) => {
         let sortedAttractions = [...this.state.filteredAttractions];
@@ -118,20 +93,26 @@ class AttractionsApp extends React.Component {
 
     handleAddAttraction = (attractionData) => {
         const { attractions } = this.state;
-        const newAttractions = [...attractions, attractionData];
+        const newAttractions = [attractionData, ...attractions];
         this.setState({ attractions: newAttractions, filteredAttractions: newAttractions });
     };
 
     render() {
         return (
             <div>
-
-                <FilterAttractions attractions={this.state.attractions} filterAttractions={this.filterAttractions} />
-                <TouristAttractionTable attractions={this.state.attractions} filteredAttractions={this.state.filteredAttractions}
+                <FilterAttractions
+                    attractions={this.state.attractions}
+                    filterAttractions={this.filterAttractions}
+                    handleAddAttraction={this.handleAddAttraction} // Pass the handleAddAttraction method
+                />
+                <TouristAttractionTable
+                    attractions={this.state.attractions}
+                    filteredAttractions={this.state.filteredAttractions}
                     sortAttractions={this.sortAttractions}
                     sortColumn={this.state.sortColumn}
                     sortDirection={this.state.sortDirection}
-                    deleteAttraction={this.deleteAttraction} />
+                    deleteAttraction={this.deleteAttraction}
+                />
             </div>
         );
     }
@@ -241,13 +222,11 @@ class FilterAttractions extends React.Component {
 
     handleShowModal = () => {
         this.setState({ showModal: true });
-        console.log('button was clicked')
     };
 
     handleCloseModal = () => {
         this.setState({ showModal: false });
     };
-
 
     render() {
         let areas = ['All Areas'];
@@ -280,10 +259,9 @@ class FilterAttractions extends React.Component {
                     <AddAttractionModal
                         showModal={this.state.showModal}
                         handleClose={this.handleCloseModal}
-                        handleAddAttraction={this.props.handleAddAttraction}
+                        handleAddAttraction={this.props.handleAddAttraction} // Ensure handleAddAttraction is being passed from AttractionsApp
                     />
                 )}
-
             </div>
         );
     }
@@ -297,7 +275,14 @@ class AddAttractionModal extends React.Component {
             name: "",
             address: "",
             tags: "",
-            isFree: true,
+            latitude: "",
+            longitude: "",
+            description: "",
+            contactNumber: "",
+            imageFileName: "",
+            lastUpdate: "",
+            rating: 0,
+            free: "yes"
         };
     }
 
@@ -312,12 +297,39 @@ class AddAttractionModal extends React.Component {
     };
 
     handleAddAttraction = () => {
-        const { name, address, tags, isFree } = this.state;
+        const {
+            name,
+            address,
+            tags,
+            latitude,
+            longitude,
+            description,
+            contactNumber,
+            imageFileName,
+            lastUpdate,
+            rating,
+            free
+        } = this.state;
+
+        // Validate the required fields
+        if (!name || !address || !tags) {
+            console.error('Name, address, and tags are required fields.');
+            return;
+        }
+
         const newAttraction = {
+            poiID: Date.now(), // Generate a unique ID (You can use a better method for generating unique IDs)
             name: name,
             address: address,
             tags: tags.split(",").map((tag) => tag.trim()),
-            isFree: isFree,
+            latitude: latitude,
+            longitude: longitude,
+            description: description,
+            contactNumber: contactNumber,
+            imageFileName: imageFileName,
+            lastUpdate: lastUpdate,
+            rating: rating,
+            free: free
         };
 
         this.props.handleAddAttraction(newAttraction);
@@ -367,13 +379,77 @@ class AddAttractionModal extends React.Component {
                                     />
                                 </label>
                                 <label>
-                                    Free:
+                                    Latitude:
                                     <input
-                                        type="checkbox"
-                                        name="isFree"
-                                        checked={this.state.isFree}
+                                        type="text"
+                                        name="latitude"
+                                        value={this.state.latitude}
                                         onChange={this.handleInputChange}
                                     />
+                                </label>
+                                <label>
+                                    Longitude:
+                                    <input
+                                        type="text"
+                                        name="longitude"
+                                        value={this.state.longitude}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Description:
+                                    <textarea
+                                        name="description"
+                                        value={this.state.description}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Contact Number:
+                                    <input
+                                        type="text"
+                                        name="contactNumber"
+                                        value={this.state.contactNumber}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Image File Name:
+                                    <input
+                                        type="text"
+                                        name="imageFileName"
+                                        value={this.state.imageFileName}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Last Update:
+                                    <input
+                                        type="text"
+                                        name="lastUpdate"
+                                        value={this.state.lastUpdate}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Rating:
+                                    <input
+                                        type="number"
+                                        name="rating"
+                                        value={this.state.rating}
+                                        onChange={this.handleInputChange}
+                                    />
+                                </label>
+                                <label>
+                                    Free:
+                                    <select
+                                        name="free"
+                                        value={this.state.free}
+                                        onChange={this.handleInputChange}
+                                    >
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
                                 </label>
                             </form>
                         </div>
