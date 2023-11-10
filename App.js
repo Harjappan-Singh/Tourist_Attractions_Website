@@ -137,6 +137,8 @@ class TouristAttractionTable extends React.Component {
         this.props.deleteAttraction(poiID);
     }
 
+
+
     render() {
         let attractions = this.props.filteredAttractions.length
             ? this.props.filteredAttractions
