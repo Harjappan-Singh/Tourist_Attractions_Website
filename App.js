@@ -57,6 +57,8 @@ class AttractionsApp extends React.Component {
                 return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
             } else if (sortColumn === "rating") {
                 return (a[sortColumn] - b[sortColumn]) * sortDirection;
+            } else if (sortColumn === "latitude" || sortColumn === "longitude") {
+                return (a[sortColumn] - b[sortColumn]) * sortDirection;
             } else if (sortColumn === "lastUpdate") {
                 const dateA = new Date(a[sortColumn]);
                 const dateB = new Date(b[sortColumn]);
@@ -121,9 +123,16 @@ class AttractionsApp extends React.Component {
 class TouristAttractionTable extends React.Component {
     constructor(props) {
         super(props);
+        // this.state = {
+        //     sortDirection: 1,
+        //     sortColumn: "name"
+        // };
+
         this.state = {
             sortDirection: 1,
-            sortColumn: "name"
+            sortColumn: "name",
+            selectedAttraction: null,
+            showModal: false
         };
         this.handleHeaderClick = this.handleHeaderClick.bind(this);
     }
@@ -131,6 +140,20 @@ class TouristAttractionTable extends React.Component {
     handleHeaderClick = (e) => {
         let sortColumn = e.target.id;
         this.props.sortAttractions(sortColumn);
+    };
+
+    handleRowClick = (attraction) => {
+        this.setState({
+            selectedAttraction: attraction,
+            showModal: true
+        });
+    };
+
+    handleCloseModal = () => {
+        this.setState({
+            selectedAttraction: null,
+            showModal: false
+        });
     };
 
     handleDelete = (poiID) => {
@@ -173,7 +196,7 @@ class TouristAttractionTable extends React.Component {
                                 </thead>
                                 <tbody>
                                     {attractions.map((attraction) => (
-                                        <tr key={attraction.poiID}>
+                                        <tr key={attraction.poiID} onClick={() => this.handleRowClick(attraction)}>
                                             {keys.map((key) => (
                                                 <td key={key}>
                                                     {Array.isArray(attraction[key])
@@ -196,7 +219,65 @@ class TouristAttractionTable extends React.Component {
                         </div>
                     </div>
                 </div>
+
+                {this.state.showModal && this.state.selectedAttraction && (
+                    <AttractionDetailsModal
+                        attraction={this.state.selectedAttraction}
+                        handleClose={this.handleCloseModal}
+                    />
+                )}
             </div>
+
+
+
+            // <div className="container-fluid">
+            //     <h1 className="h3 mb-2 text-gray-800">Tourist Attractions</h1>
+            //     <div className="card shadow mb-4">
+            //         <div className="card-body">
+            //             <div className="table-responsive">
+            //                 <table className="table table-bordered" id="dataTable" width="100%" cellSpacing="0">
+            //                     <thead>
+            //                         <tr>
+            //                             {keys.map((key) => (
+            //                                 <th
+            //                                     key={key}
+            //                                     id={key}
+            //                                     onClick={this.handleHeaderClick}
+            //                                     scope="col"
+            //                                 >
+            //                                     {key.toUpperCase()}{' '}
+            //                                     {this.props.sortColumn === key && this.props.sortDirection === 1 ? '▲' : null}{' '}
+            //                                     {this.props.sortColumn === key && this.props.sortDirection === -1 ? '▼' : null}
+            //                                 </th>
+            //                             ))}
+            //                         </tr>
+            //                     </thead>
+            //                     <tbody>
+            //                         {attractions.map((attraction) => (
+            //                             <tr key={attraction.poiID}>
+            //                                 {keys.map((key) => (
+            //                                     <td key={key}>
+            //                                         {Array.isArray(attraction[key])
+            //                                             ? attraction[key].join(', ')
+            //                                             : attraction[key]}
+            //                                     </td>
+            //                                 ))}
+            //                                 <td>
+            //                                     <button
+            //                                         type="button"
+            //                                         className="btn btn-danger"
+            //                                         onClick={() => this.handleDelete(attraction.poiID)}>
+            //                                         Delete
+            //                                     </button>
+            //                                 </td>
+            //                             </tr>
+            //                         ))}
+            //                     </tbody>
+            //                 </table>
+            //             </div>
+            //         </div>
+            //     </div>
+            // </div>
         );
     }
 }
@@ -229,7 +310,6 @@ class FilterAttractions extends React.Component {
     handleCloseModal = () => {
         this.setState({ showModal: false });
     };
-
     render() {
         let areas = ['All Areas'];
         this.props.attractions.forEach((attraction) => {
@@ -261,7 +341,7 @@ class FilterAttractions extends React.Component {
                     <AddAttractionModal
                         showModal={this.state.showModal}
                         handleClose={this.handleCloseModal}
-                        handleAddAttraction={this.props.handleAddAttraction} // Ensure handleAddAttraction is being passed from AttractionsApp
+                        handleAddAttraction={this.props.handleAddAttraction}
                     />
                 )}
             </div>
@@ -465,3 +545,60 @@ class AddAttractionModal extends React.Component {
         );
     }
 }
+
+// AttractionDetailsModal.jsx
+
+
+class AttractionDetailsModal extends React.Component {
+    componentDidMount() {
+        this.loadMap();
+    }
+
+    loadMap = () => {
+        const { attraction } = this.props;
+
+        // Ensure the Google Maps API is available
+        if (window.google) {
+            const map = new window.google.maps.Map(document.getElementById('google-map'), {
+                center: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
+                zoom: 15,
+            });
+
+            const marker = new window.google.maps.Marker({
+                position: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
+                map: map,
+                title: attraction.name,
+            });
+        }
+    };
+
+    render() {
+        const { attraction } = this.props;
+        const imageUrl = `https://source.unsplash.com/800x600/?${attraction.name} Dublin`;
+
+
+        return (
+            <div className="modal" id="attractionDetailsModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="exampleModalLabel">Attraction Details</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={this.props.handleClose}></button>
+                        </div>
+                        <div id="google-map" style={{ height: '300px', width: '100%' }}></div>
+                        <div className="modal-body">
+                            <p>Name: {attraction.name}</p>
+                            <p>Address: {attraction.address}</p>
+                            {/* ... other fields ... */}
+                            {imageUrl && <img src={imageUrl} alt={attraction.name} style={{ maxWidth: '100%' }} />}
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={this.props.handleClose}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
