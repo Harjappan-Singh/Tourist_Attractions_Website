@@ -6,9 +6,7 @@ class AttractionsApp extends React.Component {
             filteredAttractions: [],
             sortDirection: 1,
             sortColumn: "name",
-            showAddModal: false,
-            selectedAttractionForModify: null,
-            showModifyModal: false,
+            showAddModal: false
         };
     }
 
@@ -20,30 +18,23 @@ class AttractionsApp extends React.Component {
                     { rating: 4, free: "yes", tags: ["restaurant", "bar"] },
                     { rating: 5, free: "yes", tags: ["parks", "hotel", "historical"] },
                     { rating: 0, free: "no", tags: ["historical", "sports"] },
-                    {
-                        rating: 1,
-                        free: "yes",
-                        tags: ["arena", "entertainment", "sports"],
-                    },
+                    { rating: 1, free: "yes", tags: ["arena", "entertainment", "sports"] },
                     { rating: 3, free: "no", tags: ["theatre", "hotel"] },
                     { rating: 2, free: "yes", tags: ["parks", "hotel"] },
                     { rating: 2, free: "no", tags: ["waterpark", "hotel"] },
                     { rating: 1, free: "no", tags: ["trust", "old people"] },
-                    { rating: 4, free: "yes", tags: ["hill", "nature"] },
+                    { rating: 4, free: "yes", tags: ["hill", "nature"] }
                 ];
 
                 let additionalKeys = Object.keys(additional[0]);
 
                 let attractionsData = data;
                 additional.forEach((field, index) => {
-                    additionalKeys.forEach((fieldKey) => {
+                    additionalKeys.forEach(fieldKey => {
                         attractionsData[index][fieldKey] = field[fieldKey];
                     });
                 });
-                this.setState({
-                    attractions: attractionsData,
-                    filteredAttractions: attractionsData,
-                });
+                this.setState({ attractions: attractionsData, filteredAttractions: attractionsData });
                 this.sortAttractions(this.state.sortColumn, this.state.sortDirection);
             })
             .catch((error) => {
@@ -51,101 +42,75 @@ class AttractionsApp extends React.Component {
             });
     }
 
-    sortAttractions = (sortColumn, sortDirection = 1) => {
+    sortAttractions = (sortColumn) => {
         let sortedAttractions = [...this.state.filteredAttractions];
+        let sortDirection = this.state.sortDirection === 1 ? -1 : 1;
 
         sortedAttractions.sort((a, b) => {
-            if (
-                sortColumn === "name" ||
-                sortColumn === "address" ||
-                sortColumn === "free"
-            ) {
+            if (sortColumn === "name" || sortColumn === "address") {
                 return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
             } else if (sortColumn === "tags") {
                 const tagsA = a[sortColumn].join(", ");
                 const tagsB = b[sortColumn].join(", ");
                 return tagsA.localeCompare(tagsB) * sortDirection;
-            } else if (sortColumn === "rating" || sortColumn === "latitude" || sortColumn === "longitude") {
+            } else if (sortColumn === "free") {
+                return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
+            } else if (sortColumn === "rating") {
+                return (a[sortColumn] - b[sortColumn]) * sortDirection;
+            } else if (sortColumn === "latitude" || sortColumn === "longitude") {
                 return (a[sortColumn] - b[sortColumn]) * sortDirection;
             } else if (sortColumn === "lastUpdate") {
                 const dateA = new Date(a[sortColumn]);
                 const dateB = new Date(b[sortColumn]);
                 return (dateA - dateB) * sortDirection;
+            } else if (sortColumn === "contactNumber") {
+                return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
+            } else if (sortColumn === "description") {
+                return a[sortColumn].localeCompare(b[sortColumn]) * sortDirection;
             } else {
                 return 0;
             }
         });
 
-        this.setState({
-            filteredAttractions: sortedAttractions,
-            sortColumn,
-            sortDirection,
-        });
+
+        this.setState({ filteredAttractions: sortedAttractions, sortColumn, sortDirection: sortDirection });
     };
 
+
+
     filterAttractions = (filterValue, searchQuery) => {
-        let filteredAttractions = this.state.attractions;
+        let filteredAttractions;
 
-        if (filterValue !== "All Areas") {
-            const areaRegex = new RegExp(`${filterValue}`, "i");
-            filteredAttractions = filteredAttractions.filter((attraction) =>
-                areaRegex.test(attraction.address)
-            );
+        if (filterValue === "All Areas") {
+            filteredAttractions = this.state.attractions;
+        } else {
+            filteredAttractions = this.state.attractions.filter((attraction) => {
+                const areaRegex = new RegExp(`${filterValue}`, "i");
+                return areaRegex.test(attraction.address);
+            });
         }
 
-        if (searchQuery) {
-            const queryRegex = new RegExp(`${searchQuery}`, "i");
-            filteredAttractions = filteredAttractions.filter((attraction) =>
-                Object.values(attraction).some((value) =>
-                    queryRegex.test(value.toString())
-                )
-            );
-        }
+        filteredAttractions = filteredAttractions.filter((attraction) =>
+            Object.values(attraction).some((value) =>
+                String(value).toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        );
 
         this.setState({ filteredAttractions });
     };
 
+
+
     deleteAttraction = (poiID) => {
-        const updatedAttractions = this.state.attractions.filter(
-            (attraction) => attraction.poiID !== poiID
-        );
-        const updatedFilteredAttractions = this.state.filteredAttractions.filter(
-            (attraction) => attraction.poiID !== poiID
-        );
-        this.setState({
-            attractions: updatedAttractions,
-            filteredAttractions: updatedFilteredAttractions,
-        });
-    };
+        const updatedAttractions = this.state.attractions.filter(attraction => attraction.poiID !== poiID);
+        const updatedFilteredAttractions = this.state.filteredAttractions.filter(attraction => attraction.poiID !== poiID);
+        this.setState({ attractions: updatedAttractions, filteredAttractions: updatedFilteredAttractions });
+    }
 
     handleAddAttraction = (attractionData) => {
         const { attractions } = this.state;
         const newAttractions = [attractionData, ...attractions];
-        this.setState({
-            attractions: newAttractions,
-            filteredAttractions: newAttractions,
-        });
-    };
-
-    handleModify = (attraction, e) => {
-        e.stopPropagation();
-
-        this.setState({
-            selectedAttractionForModify: attraction,
-            showModifyModal: true,
-        });
-    };
-
-    handleModifyAttraction = (modifiedAttraction) => {
-        const { attractions } = this.state;
-        const index = attractions.findIndex(
-            (attraction) => attraction.poiID === modifiedAttraction.poiID
-        );
-        attractions[index] = modifiedAttraction;
-        this.setState({
-            attractions,
-            filteredAttractions: attractions,
-        });
+        this.setState({ attractions: newAttractions, filteredAttractions: newAttractions });
     };
 
     render() {
@@ -163,8 +128,6 @@ class AttractionsApp extends React.Component {
                     sortColumn={this.state.sortColumn}
                     sortDirection={this.state.sortDirection}
                     deleteAttraction={this.deleteAttraction}
-                    handleModify={this.handleModify}
-                    handleModifyAttraction={this.handleModifyAttraction}
                 />
             </div>
         );
@@ -174,64 +137,96 @@ class AttractionsApp extends React.Component {
 class TouristAttractionTable extends React.Component {
     constructor(props) {
         super(props);
-
         this.state = {
+            sortDirection: 1,
+            sortColumn: "name",
             selectedAttraction: null,
-            showModal: false,
-            showModifyModal: false,
-            selectedAttractionForModify: null,
+            showModal: false
         };
+        this.handleHeaderClick = this.handleHeaderClick.bind(this);
     }
 
     handleHeaderClick = (e) => {
         let sortColumn = e.target.id;
-        let sortDirection =
-            this.props.sortColumn === sortColumn
-                ? -this.props.sortDirection
-                : this.props.sortDirection;
-        this.props.sortAttractions(sortColumn, sortDirection);
-    };
-
-    handleRowClick = (attraction) => {
-        console.log("Row clicked. Attraction:", attraction);
-        this.setState({
-            selectedAttraction: attraction,
-            showModal: true,
-        }, () => {
-            console.log(this.state.showModal);
-        });
-    };
-
-    handleCloseModal = () => {
-        console.log("Closing modal. State:", this.state);
-        this.setState({
-            selectedAttraction: null,
-            showModal: false,
-            showModifyModal: false,
-            selectedAttractionForModify: null,
-        });
+        this.props.sortAttractions(sortColumn);
     };
 
     handleDelete = (poiID, e) => {
         e.stopPropagation();
+
         this.props.deleteAttraction(poiID);
     };
 
-    handleModify = (attraction, e) => {
+    handleRowClick = (e, attraction) => {
         e.stopPropagation();
-
         this.setState({
-            selectedAttractionForModify: attraction,
+            selectedAttraction: attraction,
+            showModal: true
+        });
+    };
+
+
+
+    handleCloseModal = () => {
+        this.setState({
+            selectedAttraction: null,
+            showModal: false
+        });
+    };
+
+
+    handleModify = (attraction) => {
+        this.setState({
+            selectedAttraction: attraction,
             showModifyModal: true,
         });
     };
 
-    render() {
-        let attractions =
-            this.props.filteredAttractions.length > 0
-                ? this.props.filteredAttractions
-                : this.props.attractions;
+    handleCloseModifyModal = () => {
+        this.setState({
+            selectedAttraction: null,
+            showModifyModal: false,
+        });
+    };
 
+    handleModifyAttraction = (modifiedAttraction) => {
+        console.log('Updated Attraction:', modifiedAttraction);
+
+        if (this.state.attractions) {
+            const index = this.state.attractions.findIndex(
+                (attraction) => attraction.poiID === modifiedAttraction.poiID
+            );
+
+            if (index !== -1) {
+                const updatedAttractions = [...this.state.attractions];
+                updatedAttractions[index] = modifiedAttraction;
+
+                const updatedFilteredAttractions = [...this.state.filteredAttractions];
+                const filteredIndex = updatedFilteredAttractions.findIndex(
+                    (attraction) => attraction.poiID === modifiedAttraction.poiID
+                );
+
+                if (filteredIndex !== -1) {
+                    updatedFilteredAttractions[filteredIndex] = modifiedAttraction;
+                }
+
+                this.setState({
+                    attractions: updatedAttractions,
+                    filteredAttractions: updatedFilteredAttractions,
+                    selectedAttraction: null,
+                    showModifyModal: false,
+                });
+            }
+        }
+    };
+
+
+
+
+    render() {
+        let attractions = this.props.filteredAttractions.length
+            ? this.props.filteredAttractions
+            : this.props.attractions;
         let keys =
             attractions.length === 0
                 ? []
@@ -241,7 +236,8 @@ class TouristAttractionTable extends React.Component {
                         key !== "latitude" &&
                         key !== "longitude" &&
                         key !== "lastUpdate" &&
-                        key !== "imageFileName"
+                        key !== "imageFileName" &&
+                        key !== "description"
                 );
 
         return (
@@ -249,12 +245,7 @@ class TouristAttractionTable extends React.Component {
                 <div className="card shadow mb-4">
                     <div className="card-body">
                         <div className="table-responsive">
-                            <table
-                                className="table table-bordered"
-                                id="dataTable"
-                                width="100%"
-                                cellSpacing="0"
-                            >
+                            <table className="table table-bordered" id="dataTable" width="100%" cellSpacing="0">
                                 <thead>
                                     <tr>
                                         {keys.map((key) => (
@@ -264,31 +255,20 @@ class TouristAttractionTable extends React.Component {
                                                 onClick={this.handleHeaderClick}
                                                 scope="col"
                                             >
-                                                {key.toUpperCase()}{" "}
-                                                {this.props.sortColumn === key &&
-                                                    this.props.sortDirection === 1
-                                                    ? "▲"
-                                                    : null}{" "}
-                                                {this.props.sortColumn === key &&
-                                                    this.props.sortDirection === -1
-                                                    ? "▼"
-                                                    : null}
+                                                {key.toUpperCase()}{' '}
+                                                {this.props.sortColumn === key && this.props.sortDirection === 1 ? '▲' : null}{' '}
+                                                {this.props.sortColumn === key && this.props.sortDirection === -1 ? '▼' : null}
                                             </th>
                                         ))}
-                                        <th>Delete</th>
-                                        <th>Modify</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {attractions.map((attraction) => (
-                                        <tr
-                                            key={attraction.poiID}
-                                            onClick={() => this.handleRowClick(attraction)}
-                                        >
+                                        <tr key={attraction.poiID} onClick={(e) => this.handleRowClick(e, attraction)}>
                                             {keys.map((key) => (
                                                 <td key={key}>
                                                     {Array.isArray(attraction[key])
-                                                        ? attraction[key].join(", ")
+                                                        ? attraction[key].join(', ')
                                                         : attraction[key]}
                                                 </td>
                                             ))}
@@ -296,9 +276,7 @@ class TouristAttractionTable extends React.Component {
                                                 <button
                                                     type="button"
                                                     className="btn btn-danger"
-                                                    onClick={(e) =>
-                                                        this.handleDelete(attraction.poiID, e)
-                                                    }
+                                                    onClick={(e) => this.handleDelete(attraction.poiID, e)}
                                                 >
                                                     Delete
                                                 </button>
@@ -306,20 +284,34 @@ class TouristAttractionTable extends React.Component {
                                             <td>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-info"
-                                                    onClick={(e) => this.handleModify(attraction, e)}
+                                                    className="btn btn-primary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        this.handleModify(attraction);
+                                                    }}
                                                 >
                                                     Modify
                                                 </button>
+
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            {this.state.showModifyModal && this.state.selectedAttraction && (
+                                <ModifyAttractionModal
+                                    showModal={this.state.showModifyModal}
+                                    handleClose={this.handleCloseModifyModal}
+                                    attraction={this.state.selectedAttraction}
+                                    attractions={this.props.attractions}
+                                    handleModify={this.handleModifyAttraction}
+                                />
+                            )}
+
+
                         </div>
                     </div>
                 </div>
-                {console.log(this.state.showModal)}
 
                 {this.state.showModal && this.state.selectedAttraction && (
                     <AttractionDetailsModal
@@ -327,87 +319,26 @@ class TouristAttractionTable extends React.Component {
                         handleClose={this.handleCloseModal}
                     />
                 )}
-
-                {this.state.showModifyModal && this.state.selectedAttractionForModify && (
-                    <ModifyAttractionModal
-                        attraction={this.state.selectedAttractionForModify}
-                        handleClose={this.handleCloseModal}
-                        handleModifyAttraction={this.props.handleModifyAttraction}
-                    />
-                )}
             </div>
         );
     }
 }
 
-class AttractionDetailsModal extends React.Component {
-    // componentDidMount() {
-    //     this.loadMap();
-    // }
 
-    loadMap = () => {
-        const { attraction } = this.props;
-
-        // Ensure the Google Maps API is available
-        if (window.google) {
-            const map = new window.google.maps.Map(document.getElementById('google-map'), {
-                center: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
-                zoom: 15,
-            });
-
-            const marker = new window.google.maps.Marker({
-                position: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
-                map: map,
-                title: attraction.name,
-            });
-        }
-    };
-
-    render() {
-        const { attraction } = this.props;
-        const imageUrl = attraction ? `https://source.unsplash.com/800x600/?${attraction.name} Dublin` : '';
-
-
-        return (
-            <div className="modal" id="attractionDetailsModal">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title">Attraction Details</h5>
-                            <button type="button" className="close" aria-label="Close" onClick={this.props.handleClose}>
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div id="google-map" style={{ height: '300px', width: '100%' }}></div>
-                        <div className="modal-body">
-                            <p>Name: {attraction.name}</p>
-                            <p>Address: {attraction.address}</p>
-                            {/* ... other fields ... */}
-                            {imageUrl && <img src={imageUrl} alt={attraction.name} style={{ maxWidth: '100%' }} />}
-                        </div>
-                        <div className="modal-footer">
-                            <button type="button" className="btn btn-secondary" onClick={this.props.handleClose}>Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-}
 
 class FilterAttractions extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            filterValue: "All Areas",
-            searchQuery: "",
-            showModal: false,
+            filterValue: 'All Areas',
+            searchQuery: '',
+            showModal: false
         };
 
         this.handleFilterChange = this.handleFilterChange.bind(this);
+        this.handleSearchInputChange = this.handleSearchInputChange.bind(this);
         this.handleShowModal = this.handleShowModal.bind(this);
         this.handleCloseModal = this.handleCloseModal.bind(this);
-        this.handleSearchChange = this.handleSearchChange.bind(this);
     }
 
     handleFilterChange = (e) => {
@@ -416,11 +347,13 @@ class FilterAttractions extends React.Component {
         this.props.filterAttractions(filterValue, this.state.searchQuery);
     };
 
-    handleSearchChange = (e) => {
+    handleSearchInputChange = (e) => {
         const searchQuery = e.target.value;
-        this.setState({ searchQuery });
-        this.props.filterAttractions(this.state.filterValue, searchQuery);
+        this.setState({ searchQuery }, () => {
+            this.props.filterAttractions(this.state.filterValue, searchQuery);
+        });
     };
+
 
     handleShowModal = () => {
         this.setState({ showModal: true });
@@ -429,9 +362,8 @@ class FilterAttractions extends React.Component {
     handleCloseModal = () => {
         this.setState({ showModal: false });
     };
-
     render() {
-        let areas = ["All Areas"];
+        let areas = ['All Areas'];
         this.props.attractions.forEach((attraction) => {
             const areaRegex = /(?:Dublin\s\d+)/g;
             const addressMatch = attraction.address.match(areaRegex);
@@ -442,7 +374,6 @@ class FilterAttractions extends React.Component {
         areas.sort();
 
         return (
-
             <nav className="navbar">
                 <div className="container">
                     <h1>Dublin Attractions</h1>
@@ -466,10 +397,11 @@ class FilterAttractions extends React.Component {
                             type="text"
                             placeholder="Search attractions..."
                             value={this.state.searchQuery}
-                            onChange={this.handleSearchChange}
+                            onChange={this.handleSearchInputChange}
                         />
 
-                        <button onClick={this.handleShowModal}>Add Attraction</button>
+                        <button type="button"
+                            className="btn btn-warning" onClick={this.handleShowModal}>Add Attraction</button>
 
                         {this.state.showModal && (
                             <AddAttractionModal
@@ -481,11 +413,9 @@ class FilterAttractions extends React.Component {
                     </div>
                 </div>
             </nav>
-
         );
     }
 }
-
 
 
 class AddAttractionModal extends React.Component {
@@ -531,14 +461,13 @@ class AddAttractionModal extends React.Component {
             free
         } = this.state;
 
-        // Validate the required fields
         if (!name || !address || !tags) {
             console.error('Name, address, and tags are required fields.');
             return;
         }
 
         const newAttraction = {
-            poiID: Date.now(), // Generate a unique ID (You can use a better method for generating unique IDs)
+            poiID: Date.now(),
             name: name,
             address: address,
             tags: tags.split(",").map((tag) => tag.trim()),
@@ -557,21 +486,20 @@ class AddAttractionModal extends React.Component {
     };
 
     render() {
-        console.log('Rendering AttractionDetailsModal');
         if (!this.props.showModal) {
             return null;
         }
 
         return (
-            <div className="modal" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div className="addModal modal" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel">Add Attraction</h5>
+                            <h5 className="modal-title" id="addModalLabel">Add Attraction</h5>
                             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={this.props.handleClose}></button>
                         </div>
                         <div className="modal-body">
-                            <form>
+                            <form className="addAttractionForm">
                                 <label>
                                     Name:
                                     <input
@@ -673,6 +601,7 @@ class AddAttractionModal extends React.Component {
                                     </select>
                                 </label>
                             </form>
+
                         </div>
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={this.props.handleClose}>Close</button>
@@ -681,88 +610,238 @@ class AddAttractionModal extends React.Component {
                     </div>
                 </div>
             </div>
+
+        );
+    }
+}
+
+class AttractionDetailsModal extends React.Component {
+    componentDidMount() {
+        this.loadMap();
+    }
+
+    loadMap = () => {
+        const { attraction } = this.props;
+        if (window.google) {
+            const map = new window.google.maps.Map(document.getElementById('google-map'), {
+                center: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
+                zoom: 15,
+            });
+
+            const marker = new window.google.maps.Marker({
+                position: { lat: parseFloat(attraction.latitude), lng: parseFloat(attraction.longitude) },
+                map: map,
+                title: attraction.name,
+            });
+        }
+    };
+
+    render() {
+        const { attraction } = this.props;
+        // const imageUrl = `https://source.unsplash.com/800x600/?${attraction.name} Dublin`;
+
+
+        return (
+            <div className="modal attractionDetailsModal" id="attractionDetailsModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="exampleModalLabel">Attraction Details</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={this.props.handleClose}></button>
+                        </div>
+                        <div id="google-map" style={{ height: '300px', width: '100%' }}></div>
+                        <div className="modal-body">
+                            <p className="attractionDetail"><strong>Name:</strong> {attraction.name}</p>
+                            <p className="attractionDetail"><strong>Address:</strong> {attraction.address}</p>
+                            <p className="attractionDetail"><strong>Description:</strong> {attraction.description}</p>
+                            <p className="attractionDetail"><strong>Contact Number:</strong> {attraction.contactNumber}</p>
+                            <p className="attractionDetail"><strong>Latitude:</strong> {attraction.latitude}</p>
+                            <p className="attractionDetail"><strong>Longitude:</strong> {attraction.longitude}</p>
+                            <p className="attractionDetail"><strong>Last Update:</strong> {attraction.lastUpdate}</p>
+                            {/* {imageUrl && <img src={imageUrl} alt={attraction.name} style={{ maxWidth: '100%' }} />} */}
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={this.props.handleClose}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         );
     }
 }
 
 
-
-
-
-
 class ModifyAttractionModal extends React.Component {
     constructor(props) {
         super(props);
-
         this.state = {
-            // Initialize state properties based on the attraction data
-            name: props.attraction ? props.attraction.name : '',
-            address: props.attraction ? props.attraction.address : '',
-            description: props.attraction ? props.attraction.description : '',
-            contactNumber: props.attraction ? props.attraction.contactNumber : '',
-            latitude: props.attraction ? props.attraction.latitude : '',
-            longitude: props.attraction ? props.attraction.longitude : '',
-            // Add other properties as needed
+            modifiedAttraction: { ...props.attraction },
         };
     }
 
     handleInputChange = (e) => {
-        const { name, value } = e.target;
-        this.setState({ [name]: value });
+        const target = e.target;
+        const value = target.type === 'checkbox' ? target.checked : target.value;
+        const name = target.name;
+
+        this.setState((prevState) => ({
+            modifiedAttraction: {
+                ...prevState.modifiedAttraction,
+                [name]: name === 'tags' ? (value ? value.split(',').map(tag => tag.trim()) : []) : value,
+            },
+        }));
     };
 
-    handleModifyAttraction = () => {
-        // Create a modified attraction object using the current state
-        const modifiedAttraction = {
-            ...this.props.attraction,
-            name: this.state.name,
-            address: this.state.address,
-            description: this.state.description,
-            contactNumber: this.state.contactNumber,
-            latitude: this.state.latitude,
-            longitude: this.state.longitude,
-            // Add other properties as needed
-        };
+    handleSave = () => {
+        const { modifiedAttraction } = this.state;
+        const { attractions, handleModify, handleClose } = this.props;
 
-        // Pass the modified attraction to the parent component
-        this.props.handleModifyAttraction(modifiedAttraction);
+        if (!attractions || !Array.isArray(attractions)) {
+            console.error('Attractions is undefined or not an array:', attractions);
+            return;
+        }
 
-        // Close the modal
-        this.props.handleClose();
+        if (!modifiedAttraction || !modifiedAttraction.poiID) {
+            console.error('Invalid modified attraction:', modifiedAttraction);
+            return;
+        }
+
+        const updatedAttractions = attractions.map(attraction =>
+            attraction.poiID === modifiedAttraction.poiID ? modifiedAttraction : attraction
+        );
+
+        handleModify(updatedAttractions);
+        handleClose();
     };
+
+
+
+
 
     render() {
-        const { handleClose } = this.props;
+        const { handleClose, showModal } = this.props;
+        const { modifiedAttraction } = this.state;
+
+        const tagsString = modifiedAttraction.tags ? modifiedAttraction.tags.join(', ') : '';
 
         return (
-            <div className="modal" id="modifyAttractionModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div className={`modal ${showModal ? 'show' : ''}`} id="modifyAttractionModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
+                    <div className="modal-content modifyAttractionModalContent">
+                        <div className="modal-header modifyAttractionModalHeader">
                             <h5 className="modal-title" id="exampleModalLabel">Modify Attraction</h5>
                             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={handleClose}></button>
                         </div>
                         <div className="modal-body">
-                            <form>
-                                {/* Input fields for attraction properties */}
-                                <div className="mb-3">
-                                    <label htmlFor="attractionName" className="form-label">Attraction Name</label>
-                                    <input type="text" className="form-control" id="attractionName" name="name" value={this.state.name} onChange={this.handleInputChange} />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="attractionAddress" className="form-label">Attraction Address</label>
-                                    <input type="text" className="form-control" id="attractionAddress" name="address" value={this.state.address} onChange={this.handleInputChange} />
-                                </div>
-                                <div className="mb-3">
-                                    <label htmlFor="attractionDescription" className="form-label">Attraction Description</label>
-                                    <textarea className="form-control" id="attractionDescription" name="description" value={this.state.description} onChange={this.handleInputChange} />
-                                </div>
-                                {/* Add other input fields as needed */}
+                            <form className="addAttractionForm">
+                                <form>
+                                    <label>
+                                        Name:
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={modifiedAttraction.name}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Address:
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            value={modifiedAttraction.address}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Tags:
+                                        <input
+                                            type="text"
+                                            name="tags"
+                                            value={tagsString}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Latitude:
+                                        <input
+                                            type="text"
+                                            name="latitude"
+                                            value={modifiedAttraction.latitude}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Longitude:
+                                        <input
+                                            type="text"
+                                            name="longitude"
+                                            value={modifiedAttraction.longitude}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Description:
+                                        <textarea
+                                            name="description"
+                                            value={modifiedAttraction.description}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Contact Number:
+                                        <input
+                                            type="text"
+                                            name="contactNumber"
+                                            value={modifiedAttraction.contactNumber}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Image File Name:
+                                        <input
+                                            type="text"
+                                            name="imageFileName"
+                                            value={modifiedAttraction.imageFileName}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Last Update:
+                                        <input
+                                            type="text"
+                                            name="lastUpdate"
+                                            value={modifiedAttraction.lastUpdate}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Rating:
+                                        <input
+                                            type="number"
+                                            name="rating"
+                                            value={modifiedAttraction.rating}
+                                            onChange={this.handleInputChange}
+                                        />
+                                    </label>
+                                    <label>
+                                        Free:
+                                        <select
+                                            name="free"
+                                            value={modifiedAttraction.free}
+                                            onChange={this.handleInputChange}
+                                        >
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </label>
+                                </form>
                             </form>
                         </div>
-                        <div className="modal-footer">
+                        <div className="modal-footer modifyAttractionModalFooter">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={handleClose}>Close</button>
-                            <button type="button" className="btn btn-primary" onClick={this.handleModifyAttraction}>Modify</button>
+                            <button type="button" className="btn btn-primary" onClick={this.handleSave}>Save</button>
                         </div>
                     </div>
                 </div>
@@ -770,5 +849,4 @@ class ModifyAttractionModal extends React.Component {
         );
     }
 }
-
 
